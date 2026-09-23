@@ -1,0 +1,45 @@
+image: 021686096644.dkr.ecr.us-east-1.amazonaws.com/open5gs-core:v1
+
+nfs:
+  - name: nrf
+    daemon: open5gs-nrfd
+    port: 7777
+  - name: scp
+    daemon: open5gs-scpd
+    port: 7777
+  - name: amf
+    daemon: open5gs-amfd
+    port: 7777
+    extraPorts:
+      - name: ngap
+        port: 38412
+        protocol: SCTP
+  - name: smf
+    daemon: open5gs-smfd
+    port: 7777
+  - name: upf
+    daemon: open5gs-upfd
+    port: 7777
+    privileged: true
+    extraPorts:
+      - name: gtpu
+        port: 2152
+        protocol: UDP
+  - name: ausf
+    daemon: open5gs-ausfd
+    port: 7777
+  - name: udm
+    daemon: open5gs-udmd
+    port: 7777
+  - name: udr
+    daemon: open5gs-udrd
+    port: 7777
+  - name: pcf
+    daemon: open5gs-pcfd
+    port: 7777
+  - name: bsf
+    daemon: open5gs-bsfd
+    port: 7777
+  - name: nssf
+    daemon: open5gs-nssfd
+    port: 7777

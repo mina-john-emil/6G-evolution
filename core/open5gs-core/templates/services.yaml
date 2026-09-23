@@ -1,0 +1,21 @@
+{{- range .Values.nfs }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: open5gs-{{ .name }}
+  namespace: open5gs
+spec:
+  selector:
+    app: open5gs-{{ .name }}
+  ports:
+    - name: sbi
+      port: {{ .port }}
+      targetPort: {{ .port }}
+    {{- range .extraPorts }}
+    - name: {{ .name }}
+      port: {{ .port }}
+      targetPort: {{ .port }}
+      protocol: {{ .protocol }}
+    {{- end }}
+---
+{{- end }}

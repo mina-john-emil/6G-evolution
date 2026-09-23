@@ -1,0 +1,55 @@
+{{- range .Values.nfs }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open5gs-{{ .name }}
+  namespace: open5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: open5gs-{{ .name }}
+  template:
+    metadata:
+      labels:
+        app: open5gs-{{ .name }}
+    spec:
+      containers:
+        - name: {{ .name }}
+          image: {{ $.Values.image }}
+          imagePullPolicy: Always
+          command: ["{{ .daemon }}"]
+          args: ["-c", "/etc/open5gs/{{ .name }}.yaml"]
+          {{- if .privileged }}
+          securityContext:
+            capabilities:
+              add: ["NET_ADMIN"]
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/open5gs
+            {{- if eq .name "udm" }}
+            - name: hnet
+              mountPath: /etc/open5gs/hnet
+            {{- end }}
+            {{- if .privileged }}
+            - name: dev-net-tun
+              mountPath: /dev/net/tun
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: open5gs-{{ .name }}-config
+        {{- if eq .name "udm" }}
+        - name: hnet
+          secret:
+            secretName: open5gs-udm-hnet
+        {{- end }}
+        {{- if .privileged }}
+        - name: dev-net-tun
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
+        {{- end }}
+---
+{{- end }}

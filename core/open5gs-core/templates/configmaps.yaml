@@ -1,0 +1,11 @@
+{{- range .Values.nfs }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: open5gs-{{ .name }}-config
+  namespace: open5gs
+data:
+  {{ .name }}.yaml: |
+{{ $.Files.Get (printf "configs/%s.yaml" .name) | indent 4 }}
+---
+{{- end }}

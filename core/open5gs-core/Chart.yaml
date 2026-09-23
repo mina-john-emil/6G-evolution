@@ -1,0 +1,4 @@
+apiVersion: v2
+name: open5gs-core
+description: Open5GS 5G core network functions
+version: 0.1.0
