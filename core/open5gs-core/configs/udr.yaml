@@ -1,0 +1,17 @@
+db_uri: mongodb://mongo.open5gs.svc.cluster.local/open5gs
+logger:
+  file:
+    path: /var/log/open5gs/udr.log
+
+global:
+  max:
+    ue: 1024
+
+udr:
+  sbi:
+    server:
+      - address: 0.0.0.0
+        port: 7777
+    client:
+      scp:
+        - uri: http://open5gs-scp.open5gs.svc.cluster.local:7777

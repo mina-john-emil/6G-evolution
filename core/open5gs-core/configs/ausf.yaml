@@ -1,0 +1,16 @@
+logger:
+  file:
+    path: /var/log/open5gs/ausf.log
+
+global:
+  max:
+    ue: 1024
+
+ausf:
+  sbi:
+    server:
+      - address: 0.0.0.0
+        port: 7777
+    client:
+      scp:
+        - uri: http://open5gs-scp.open5gs.svc.cluster.local:7777
