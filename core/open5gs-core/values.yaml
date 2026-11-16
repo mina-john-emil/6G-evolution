@@ -10,6 +10,7 @@ nfs:
   - name: amf
     daemon: open5gs-amfd
     port: 7777
+    headless: true
     extraPorts:
       - name: ngap
         port: 38412

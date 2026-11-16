@@ -27,8 +27,8 @@ data:
     homeNetworkPublicKey: '5a8d38864820197c3394b92613b20b91633cbd897119273bf8e4a6f4eec0a650'
     homeNetworkPublicKeyId: 1
     routingIndicator: '0000'
-    key: '465B5CE8B199B49FAA5F0A2EE238A6BC'
-    op: 'E8ED289DEBA952E4283B54E88E6183CA'
+    key: '__UE_K__'
+    op: '__UE_OPC__'
     opType: 'OPC'
     amf: '8000'
     imei: '356938035643803'
@@ -83,13 +83,20 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
+              K="$(cat /run/ue-auth/k)"
+              OPC="$(cat /run/ue-auth/opc)"
+              sed -e "s/__UE_K__/${K}/" -e "s/__UE_OPC__/${OPC}/" /config/ue.yaml > /tmp/ue.yaml
               sleep 10
-              exec /ueransim/build/nr-ue -c /config/ue.yaml
+              exec /ueransim/build/nr-ue -c /tmp/ue.yaml
           volumeMounts:
             - { name: config, mountPath: /config }
             - { name: dev-net-tun, mountPath: /dev/net/tun }
+            - { name: ue-auth, mountPath: /run/ue-auth, readOnly: true }
       volumes:
         - name: config
           configMap: { name: ueransim-config }
         - name: dev-net-tun
           hostPath: { path: /dev/net/tun, type: CharDevice }
+        - name: ue-auth
+          secret:
+            secretName: ue-auth

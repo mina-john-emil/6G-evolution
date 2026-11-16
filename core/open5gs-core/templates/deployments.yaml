@@ -1,3 +1,4 @@
+
 {{- range .Values.nfs }}
 apiVersion: apps/v1
 kind: Deployment
@@ -14,7 +15,7 @@ spec:
       labels:
         app: open5gs-{{ .name }}
     spec:
-      {{- if .privileged }}
+      {{ if .privileged }}
       initContainers:
         - name: net-setup
           image: alpine:3.20
@@ -26,7 +27,7 @@ spec:
               apk add --no-cache iptables
               sysctl -w net.ipv4.ip_forward=1
               iptables -t nat -A POSTROUTING -s 10.45.0.0/16 ! -o ogstun -j MASQUERADE
-      {{- end }}
+      {{ end }}
       containers:
         - name: {{ .name }}
           image: {{ $.Values.image }}
@@ -40,37 +41,67 @@ spec:
           args:
             - |
               sed "s/__POD_IP__/${POD_IP}/g" /etc/open5gs/{{ .name }}.yaml > /tmp/{{ .name }}.yaml
+              {{ if eq .name "upf" }}
+              open5gs-upfd -c /tmp/upf.yaml &
+              UPF_PID=$!
+
+              trap 'kill -TERM "$UPF_PID" 2>/dev/null; wait "$UPF_PID"' TERM INT
+
+              i=0
+              while [ "$i" -lt 30 ]; do
+                if ip link show ogstun >/dev/null 2>&1; then
+                  ip addr replace 10.45.0.1/16 dev ogstun
+                  ip link set dev ogstun up
+                  break
+                fi
+                i=$((i+1))
+                sleep 1
+              done
+
+              if ! ip -4 addr show dev ogstun | grep -q '10.45.0.1/16'; then
+                echo "ERROR: ogstun was not configured successfully"
+                kill -TERM "$UPF_PID" 2>/dev/null
+                wait "$UPF_PID"
+                exit 1
+              fi
+
+              echo "ogstun configured successfully:"
+              ip -br addr show ogstun
+
+              wait "$UPF_PID"
+              {{ else }}
               exec {{ .daemon }} -c /tmp/{{ .name }}.yaml
-          {{- if .privileged }}
+              {{ end }}
+          {{ if .privileged }}
           securityContext:
             capabilities:
               add: ["NET_ADMIN"]
-          {{- end }}
+          {{ end }}
           volumeMounts:
             - name: config
               mountPath: /etc/open5gs
-            {{- if eq .name "udm" }}
+            {{ if eq .name "udm" }}
             - name: hnet
               mountPath: /etc/open5gs/hnet
-            {{- end }}
-            {{- if .privileged }}
+            {{ end }}
+            {{ if .privileged }}
             - name: dev-net-tun
               mountPath: /dev/net/tun
-            {{- end }}
+            {{ end }}
       volumes:
         - name: config
           configMap:
             name: open5gs-{{ .name }}-config
-        {{- if eq .name "udm" }}
+        {{ if eq .name "udm" }}
         - name: hnet
           secret:
             secretName: open5gs-udm-hnet
-        {{- end }}
-        {{- if .privileged }}
+        {{ end }}
+        {{ if .privileged }}
         - name: dev-net-tun
           hostPath:
             path: /dev/net/tun
             type: CharDevice
-        {{- end }}
+        {{ end }}
 ---
 {{- end }}

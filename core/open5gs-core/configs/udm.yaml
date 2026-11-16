@@ -30,6 +30,7 @@ udm:
     server:
       - address: 0.0.0.0
         port: 7777
+        advertise: open5gs-udm.open5gs.svc.cluster.local
     client:
-      scp:
-        - uri: http://open5gs-scp.open5gs.svc.cluster.local:7777
+      nrf:
+        - uri: http://open5gs-nrf.open5gs.svc.cluster.local:7777
