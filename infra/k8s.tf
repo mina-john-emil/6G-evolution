@@ -58,13 +58,31 @@ resource "kubernetes_secret" "ue_auth" {
   }
 }
 
+resource "kubernetes_storage_class_v1" "gp3" {
+  metadata {
+    name = "gp3"
+    annotations = {
+      "storageclass.kubernetes.io/is-default-class" = "true"
+    }
+  }
+  storage_provisioner    = "ebs.csi.aws.com"
+  volume_binding_mode    = "WaitForFirstConsumer"
+  allow_volume_expansion = true
+  reclaim_policy         = "Delete"
+  parameters = {
+    type = "gp3"
+  }
+  # module.eks includes the aws-ebs-csi-driver addon
+  depends_on = [module.eks]
+}
+
 resource "helm_release" "core" {
   name       = "open5gs-core"
   chart      = "${path.module}/../core/open5gs-core"
   namespace  = kubernetes_namespace.open5gs.metadata[0].name
   wait       = true
   timeout    = 900
-  depends_on = [kubernetes_secret.udm_hnet]
+  depends_on = [kubernetes_secret.udm_hnet, kubernetes_storage_class_v1.gp3]
 }
 
 resource "helm_release" "subscribers" {
