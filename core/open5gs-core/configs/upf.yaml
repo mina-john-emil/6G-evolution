@@ -16,8 +16,20 @@ upf:
   session:
     - subnet: 10.45.0.0/16
       gateway: 10.45.0.1
+      dnn: internet
+      dev: ogstun
     - subnet: 2001:db8:cafe::/48
       gateway: 2001:db8:cafe::1
+      dnn: internet
+      dev: ogstun
+    - subnet: 10.46.0.0/24
+      gateway: 10.46.0.1
+      dnn: urllc
+      dev: ogstun2
+    - subnet: 10.47.0.0/24
+      gateway: 10.47.0.1
+      dnn: mmtc
+      dev: ogstun3
   metrics:
     server:
       - address: 0.0.0.0

@@ -34,8 +34,16 @@ smf:
   session:
     - subnet: 10.45.0.0/16
       gateway: 10.45.0.1
+      dnn: internet
     - subnet: 2001:db8:cafe::/48
       gateway: 2001:db8:cafe::1
+      dnn: internet
+    - subnet: 10.46.0.0/24
+      gateway: 10.46.0.1
+      dnn: urllc
+    - subnet: 10.47.0.0/24
+      gateway: 10.47.0.1
+      dnn: mmtc
   dns:
     - 8.8.8.8
     - 8.8.4.4

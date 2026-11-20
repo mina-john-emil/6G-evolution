@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: seed-subscribers
+  namespace: open5gs
+data:
+  seed.js: |
+{{ .Files.Get "files/seed.js" | indent 4 }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: seed-subscribers-{{ .Release.Revision }}
+  namespace: open5gs
+spec:
+  backoffLimit: 20
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: seed
+          image: mongo:6.0
+          env:
+            - name: K
+              valueFrom: { secretKeyRef: { name: ue-auth, key: k } }
+            - name: OPC
+              valueFrom: { secretKeyRef: { name: ue-auth, key: opc } }
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              URI=mongodb://mongo.open5gs.svc.cluster.local/open5gs
+              until mongosh "$URI" --quiet --eval 'db.runCommand({ping:1}).ok' >/dev/null 2>&1; do sleep 3; done
+              mongosh "$URI" --quiet /scripts/seed.js
+          volumeMounts:
+            - { name: scripts, mountPath: /scripts }
+      volumes:
+        - name: scripts
+          configMap: { name: seed-subscribers }

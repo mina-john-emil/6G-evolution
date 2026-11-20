@@ -18,9 +18,11 @@ data:
         port: 38412
     slices:
       - sst: 1
+      - sst: 2
+      - sst: 3
     ignoreStreamIds: true
-  ue.yaml: |
-    supi: 'imsi-999700000000002'
+  ue-base.yaml: |
+    supi: 'imsi-__IMSI__'
     mcc: '999'
     mnc: '70'
     protectionScheme: 0
@@ -38,12 +40,6 @@ data:
       - 127.0.0.1
     uacAic: { mps: false, mcs: false }
     uacAcc: { normalClass: 0, class11: false, class12: false, class13: false, class14: false, class15: false }
-    sessions:
-      - type: 'IPv4'
-        apn: 'internet'
-        slice: { sst: 1 }
-    configured-nssai:
-      - sst: 1
     integrity: { IA1: true, IA2: true, IA3: true }
     ciphering: { EA1: true, EA2: true, EA3: true }
     integrityMaxRate: { uplink: 'full', downlink: 'full' }
@@ -85,9 +81,32 @@ spec:
             - |
               K="$(cat /run/ue-auth/k)"
               OPC="$(cat /run/ue-auth/opc)"
-              sed -e "s/__UE_K__/${K}/" -e "s/__UE_OPC__/${OPC}/" /config/ue.yaml > /tmp/ue.yaml
-              sleep 10
-              exec /ueransim/build/nr-ue -c /tmp/ue.yaml
+              # mk <name> <imsi> "<dnn>:<sst> ..."  -> /tmp/ue-<name>.yaml
+              mk() {
+                sed -e "s/__UE_K__/${K}/" -e "s/__UE_OPC__/${OPC}/" -e "s/__IMSI__/$2/" /config/ue-base.yaml > /tmp/ue-$1.yaml
+                { echo "sessions:"
+                  for x in $3; do echo "  - { type: 'IPv4', apn: '${x%%:*}', slice: { sst: ${x#*:} } }"; done
+                  echo "configured-nssai:"
+                  for x in $3; do echo "  - { sst: ${x#*:} }"; done; } >> /tmp/ue-$1.yaml
+              }
+              mk embb  999700000000002 "internet:1"
+              mk urllc 999700000000003 "urllc:2"
+              mk mmtc  999700000000004 "mmtc:3"
+              mk multi 999700000000005 "internet:1 urllc:2 mmtc:3"
+              mk neg   999700000000006 "urllc:2"
+              sleep 15   # let the gNB come up
+              run_ue() {
+                while true; do
+                  /ueransim/build/nr-ue -c /tmp/ue-$1.yaml >> /tmp/ue-$1.log 2>&1
+                  sleep 5
+                done
+              }
+              run_ue embb  &
+              sleep 8
+              run_ue urllc &
+              sleep 8
+              run_ue mmtc  &
+              exec sleep infinity
           volumeMounts:
             - { name: config, mountPath: /config }
             - { name: dev-net-tun, mountPath: /dev/net/tun }

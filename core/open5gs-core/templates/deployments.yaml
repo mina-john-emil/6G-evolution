@@ -27,6 +27,11 @@ spec:
               apk add --no-cache iptables
               sysctl -w net.ipv4.ip_forward=1
               iptables -t nat -A POSTROUTING -s 10.45.0.0/16 ! -o ogstun -j MASQUERADE
+              iptables -t nat -A POSTROUTING -s 10.46.0.0/24 ! -o ogstun2 -j MASQUERADE
+              iptables -t nat -A POSTROUTING -s 10.47.0.0/24 ! -o ogstun3 -j MASQUERADE
+              for a in ogstun ogstun2 ogstun3; do for b in ogstun ogstun2 ogstun3; do
+                if [ "$a" != "$b" ]; then iptables -A FORWARD -i $a -o $b -j DROP; fi
+              done; done
       {{ end }}
       containers:
         - name: {{ .name }}
@@ -52,11 +57,28 @@ spec:
                 if ip link show ogstun >/dev/null 2>&1; then
                   ip addr replace 10.45.0.1/16 dev ogstun
                   ip link set dev ogstun up
+                  sleep 2
+                  for pair in ogstun2:10.46.0.1/24 ogstun3:10.47.0.1/24; do
+                    ip addr replace "${pair#*:}" dev "${pair%%:*}"
+                    ip link set dev "${pair%%:*}" up
+                  done
                   break
                 fi
                 i=$((i+1))
                 sleep 1
               done
+
+              apply_tc() {
+                dev=$1; down=$2; dburst=$3; dlat=$4; up=$5; uburst=$6
+                tc qdisc replace dev $dev root tbf rate $down burst $dburst latency $dlat
+                tc qdisc replace dev $dev handle ffff: ingress
+                tc filter replace dev $dev parent ffff: protocol all prio 1 u32 match u32 0 0 police rate $up burst $uburst mtu 2kb drop flowid :1
+              }
+              apply_tc ogstun  100mbit 64kb 50ms  50mbit 256k
+              apply_tc ogstun2 20mbit  32kb 20ms  20mbit 256k
+              apply_tc ogstun3 1mbit   8kb  100ms 1mbit   32k
+              echo "tc rules applied:"
+              tc qdisc show dev ogstun; tc qdisc show dev ogstun2; tc qdisc show dev ogstun3
 
               if ! ip -4 addr show dev ogstun | grep -q '10.45.0.1/16'; then
                 echo "ERROR: ogstun was not configured successfully"

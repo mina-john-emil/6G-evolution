@@ -19,3 +19,9 @@ nssf:
         - uri: http://open5gs-nrf.open5gs.svc.cluster.local:7777
           s_nssai:
             sst: 1
+        - uri: http://open5gs-nrf.open5gs.svc.cluster.local:7777
+          s_nssai:
+            sst: 2
+        - uri: http://open5gs-nrf.open5gs.svc.cluster.local:7777
+          s_nssai:
+            sst: 3

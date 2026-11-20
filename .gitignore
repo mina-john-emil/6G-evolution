@@ -1,19 +1,8 @@
-# Terraform
-**/.terraform/*
+*.bak
 *.tfstate
 *.tfstate.*
-*.tfvars
-crash.log
-crash.*.log
-.terraform.lock.hcl
-
-
-open5gs-src/
-
-
-*.tar
-
-# Never commit credentials
-*.pem
-*.key
+.terraform/
+core/open5gs-core/hnet/
 .env
+lab.json
+hnet-backup*

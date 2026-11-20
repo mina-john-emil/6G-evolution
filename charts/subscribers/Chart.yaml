@@ -1,0 +1,4 @@
+apiVersion: v2
+name: subscribers
+description: Seeds Open5GS subscribers into MongoDB
+version: 0.1.0
