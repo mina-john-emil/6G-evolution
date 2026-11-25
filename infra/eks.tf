@@ -56,11 +56,12 @@ module "eks" {
   }
   eks_managed_node_groups = {
     default = {
-      instance_types = ["m7i-flex.large"]
+      capacity_type  = var.use_spot ? "SPOT" : "ON_DEMAND"
+      instance_types = var.use_spot ? ["m7i-flex.large", "m7i.large", "m6i.large", "m5.large"] : ["m7i-flex.large"]
       min_size       = 2
-      max_size       = 4
-      desired_size   = 3
-      subnet_ids     = module.vpc.private_subnets
+      max_size       = 2
+      desired_size   = 2
+      subnet_ids     = [module.vpc.private_subnets[0]]
     }
   }
 
