@@ -6,3 +6,6 @@ core/open5gs-core/hnet/
 .env
 lab.json
 hnet-backup*
+*.pem
+*.key
+*.tfvars

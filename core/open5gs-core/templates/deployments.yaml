@@ -99,6 +99,28 @@ spec:
             capabilities:
               add: ["NET_ADMIN"]
           {{ end }}
+          {{- if eq .name "upf" }}
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  ip -4 addr show dev ogstun  | grep -qF '10.45.0.1/16' &&
+                  ip -4 addr show dev ogstun2 | grep -qF '10.46.0.1/24' &&
+                  ip -4 addr show dev ogstun3 | grep -qF '10.47.0.1/24'
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          {{- else }}
+          readinessProbe:
+            tcpSocket: { port: {{ .port }} }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket: { port: {{ .port }} }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          {{- end }}
           volumeMounts:
             - name: config
               mountPath: /etc/open5gs
